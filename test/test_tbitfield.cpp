@@ -1,6 +1,7 @@
 #include "tbitfield.h"
 
 #include <gtest.h>
+#include <sstream>
 
 TEST(TBitField, can_create_bitfield_with_positive_length)
 {
@@ -48,6 +49,17 @@ TEST(TBitField, can_clear_bit)
 
   bf.ClrBit(bitIdx);
   EXPECT_EQ(0, bf.GetBit(bitIdx));
+}
+
+TEST(TBitField, clearing_bit_twice_keeps_it_zero)
+{
+  TBitField bf(10);
+  bf.SetBit(3);
+
+  bf.ClrBit(3);
+  bf.ClrBit(3);
+
+  EXPECT_EQ(0, bf.GetBit(3));
 }
 
 TEST(TBitField, throws_when_create_bitfield_with_negative_length)
@@ -138,6 +150,18 @@ TEST(TBitField, can_assign_bitfields_of_non_equal_size)
   EXPECT_NE(0, bf2.GetBit(1));
 }
 
+TEST(TBitField, copy_constructor_makes_independent_copy)
+{
+  TBitField original(3);
+  original.SetBit(1);
+  TBitField copy(original);
+
+  copy.ClrBit(1);
+
+  EXPECT_NE(0, original.GetBit(1));
+  EXPECT_EQ(0, copy.GetBit(1));
+}
+
 TEST(TBitField, compare_equal_bitfields_of_equal_size)
 {
   const int size = 2;
@@ -187,6 +211,19 @@ TEST(TBitField, or_operator_applied_to_bitfields_of_non_equal_size)
   expBf.SetBit(3);
 
   EXPECT_EQ(expBf, bf1 | bf2);
+}
+
+TEST(TBitField, can_chain_or_operations)
+{
+  TBitField bf1(4), bf2(4), bf3(4), expected(4);
+  bf1.SetBit(0);
+  bf2.SetBit(1);
+  bf3.SetBit(2);
+  expected.SetBit(0);
+  expected.SetBit(1);
+  expected.SetBit(2);
+
+  EXPECT_EQ(expected, bf1 | bf2 | bf3);
 }
 
 TEST(TBitField, and_operator_applied_to_bitfields_of_equal_size)
@@ -308,4 +345,18 @@ TEST(TBitField, bitfields_with_different_bits_are_not_equal)
   bf2.SetBit(2);
 
   EXPECT_NE(bf1, bf2);
+}
+
+TEST(TBitField, stream_operators_round_trip_bits)
+{
+  TBitField bf(4);
+  bf.SetBit(0);
+  bf.SetBit(2);
+  std::stringstream stream;
+  stream << bf;
+
+  TBitField restored(4);
+  stream >> restored;
+
+  EXPECT_EQ(bf, restored);
 }

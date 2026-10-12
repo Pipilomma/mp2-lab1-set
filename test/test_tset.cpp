@@ -1,6 +1,7 @@
 #include "tset.h"
 
 #include <gtest.h>
+#include <sstream>
 
 TEST(TSet, can_get_max_power_set)
 {
@@ -28,6 +29,18 @@ TEST(TSet, can_insert_existing_element)
   set.InsElem(k);
 
   EXPECT_NE(set.IsMember(k), 0);
+}
+
+TEST(TSet, copy_constructor_makes_independent_copy)
+{
+  TSet original(5);
+  original.InsElem(2);
+  TSet copy(original);
+
+  copy.DelElem(2);
+
+  EXPECT_NE(0, original.IsMember(2));
+  EXPECT_EQ(0, copy.IsMember(2));
 }
 
 TEST(TSet, can_delete_non_existing_element)
@@ -158,6 +171,20 @@ TEST(TSet, can_insert_existing_element_using_plus_operator)
   EXPECT_NE(0, set.IsMember(k));
 }
 
+TEST(TSet, plus_and_minus_element_do_not_change_original_set)
+{
+  TSet set(5);
+  set.InsElem(1);
+  TSet withElement = set + 3;
+  TSet withoutElement = withElement - 1;
+
+  EXPECT_EQ(0, set.IsMember(3));
+  EXPECT_NE(0, withElement.IsMember(1));
+  EXPECT_NE(0, withElement.IsMember(3));
+  EXPECT_EQ(0, withoutElement.IsMember(1));
+  EXPECT_NE(0, withoutElement.IsMember(3));
+}
+
 TEST(TSet, check_size_of_the_combination_of_two_sets_of_equal_size)
 {
   const int size = 5;
@@ -195,6 +222,19 @@ TEST(TSet, can_combine_two_sets_of_equal_size)
   expSet.InsElem(4);
 
   EXPECT_EQ(expSet, set3);
+}
+
+TEST(TSet, can_chain_union_of_three_sets)
+{
+  TSet set1(5), set2(5), set3(5), expected(5);
+  set1.InsElem(0);
+  set2.InsElem(2);
+  set3.InsElem(4);
+  expected.InsElem(0);
+  expected.InsElem(2);
+  expected.InsElem(4);
+
+  EXPECT_EQ(expected, set1 + set2 + set3);
 }
 
 TEST(TSet, check_size_changes_of_the_combination_of_two_sets_of_non_equal_size)
@@ -294,4 +334,18 @@ TEST(TSet, check_negation_operator)
   expSet.InsElem(2);
 
   EXPECT_EQ(expSet, set1);
+}
+
+TEST(TSet, stream_operators_round_trip_elements)
+{
+  TSet set(5);
+  set.InsElem(1);
+  set.InsElem(4);
+  std::stringstream stream;
+  stream << set;
+
+  TSet restored(5);
+  stream >> restored;
+
+  EXPECT_EQ(set, restored);
 }

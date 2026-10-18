@@ -82,14 +82,24 @@ int TBitField::GetBit(const int n) const // получить значение б
 
 // битовые операции
 
-TBitField& TBitField::operator=(const TBitField &bf) // присваивание
+TBitField& TBitField::operator=(const TBitField& bf)
 {
-    if (this != &bf) {
-        delete[] pMem;
-        BitLen = bf.BitLen; MemLen = bf.MemLen;
-        pMem = new TELEM[MemLen]{};
-        for (int i{};i < BitLen; pMem[i] = bf.pMem[i++]);
+    if (this == &bf) {
+        return *this;
     }
+
+    TELEM* newMem = new TELEM[bf.MemLen];
+
+    for (int i = 0; i < bf.MemLen; ++i) {
+        newMem[i] = bf.pMem[i];
+    }
+
+    delete[] pMem;
+
+    pMem = newMem;
+    BitLen = bf.BitLen;
+    MemLen = bf.MemLen;
+
     return *this;
 }
 
@@ -111,22 +121,23 @@ int TBitField::operator!=(const TBitField &bf) const // сравнение
 
 TBitField TBitField::operator|(const TBitField &bf) // операция "или"
 {
-    int mx_bitlen = max(this->BitLen, bf.BitLen);
-    TBitField tmp(mx_bitlen);
-    for (int i = 0;i < mx_bitlen;i++) {
-        if (i < min(this->BitLen, bf.BitLen)) tmp.pMem[i] = this->pMem[i] | bf.pMem[i];
-        else tmp.pMem[i] = ((BitLen > bf.BitLen) ? this->pMem[i] : bf.pMem[i]);
+    const int maxBitLen = BitLen > bf.BitLen ? BitLen : bf.BitLen;
+    TBitField tmp(maxBitLen);
+    for (int i = 0; i < tmp.MemLen; ++i) {
+        const TELEM left = i < MemLen ? pMem[i] : 0;
+        const TELEM right = i < bf.MemLen ? bf.pMem[i] : 0;
+        tmp.pMem[i] = left | right;
     }
     return tmp;
 }
 
 TBitField TBitField::operator&(const TBitField &bf) // операция "и"
 {
-    int mx_bitlen = max(this->BitLen, bf.BitLen);
-    TBitField tmp(mx_bitlen);
-    for (int i = 0;i < mx_bitlen;i++) {
-        if (i < min(this->BitLen, bf.BitLen)) tmp.pMem[i] = this->pMem[i] & bf.pMem[i];
-        else tmp.pMem[i] = ((BitLen > bf.BitLen) ? this->pMem[i] : bf.pMem[i]);
+    const int maxBitLen = BitLen > bf.BitLen ? BitLen : bf.BitLen;
+    TBitField tmp(maxBitLen);
+    const int commonWords = MemLen < bf.MemLen ? MemLen : bf.MemLen;
+    for (int i = 0; i < commonWords; ++i) {
+        tmp.pMem[i] = pMem[i] & bf.pMem[i];
     }
     return tmp;
 }
@@ -136,6 +147,11 @@ TBitField TBitField::operator~(void) // отрицание
     TBitField tmp(*this);
     for (int i{}; i < tmp.MemLen; i++) {
         tmp.pMem[i] = ~tmp.pMem[i];
+    }
+    const int remainingBits = BitLen % (sizeof(TELEM) * 8);
+    if (remainingBits != 0) {
+        const TELEM validBitsMask = (static_cast<TELEM>(1) << remainingBits) - 1;
+        tmp.pMem[tmp.MemLen - 1] &= validBitsMask;
     }
     return tmp;
 }

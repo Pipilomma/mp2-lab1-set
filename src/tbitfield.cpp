@@ -125,9 +125,10 @@ int TBitField::operator!=(const TBitField &bf) const // сравнение
 TBitField TBitField::operator|(const TBitField &bf) // операция "или"
 {
     int mx_bitlen = max(this->BitLen, bf.BitLen);
+    int min_bitlen = min(this->BitLen, bf.BitLen);
     TBitField tmp(mx_bitlen);
     for (int i = 0;i < mx_bitlen;i++) {
-        if (i < min(this->BitLen, bf.BitLen)) {
+        if (i < min_bitlen) {
             tmp.pMem[i] = this->pMem[i] | bf.pMem[i];
         } else {
             tmp.pMem[i] = ((BitLen > bf.BitLen) ? this->pMem[i] : bf.pMem[i]);
@@ -139,10 +140,14 @@ TBitField TBitField::operator|(const TBitField &bf) // операция "или"
 TBitField TBitField::operator&(const TBitField &bf) // операция "и"
 {
     int mx_bitlen = max(this->BitLen, bf.BitLen);
+    int min_bitlen = min(this->BitLen, bf.BitLen);
     TBitField tmp(mx_bitlen);
     for (int i = 0;i < mx_bitlen;i++) {
-        if (i < min(this->BitLen, bf.BitLen)) tmp.pMem[i] = this->pMem[i] & bf.pMem[i];
-        else tmp.pMem[i] = ((BitLen > bf.BitLen) ? this->pMem[i] : bf.pMem[i]);
+        if (i < min_bitlen) {
+            tmp.pMem[i] = this->pMem[i] & bf.pMem[i];
+        } else  {
+            tmp.pMem[i] = ((BitLen > bf.BitLen) ? this->pMem[i] : bf.pMem[i]);
+        }
     }
     return tmp;
 }

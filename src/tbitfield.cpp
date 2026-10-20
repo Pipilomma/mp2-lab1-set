@@ -41,12 +41,12 @@ TBitField::~TBitField()
 
 int TBitField::GetMemIndex(const int n) const // индекс Мем для бита n
 {
-    return n / (sizeof(TELEM) * 8);
+    return n >> 5;
 }
 
 TELEM TBitField::GetMemMask(const int n) const // битовая маска для бита n
 {
-    return static_cast<TELEM>(1) << (n % (sizeof(TELEM) * 8));
+    return 1 << (n & 31);
 }
 
 // доступ к битам битового поля
@@ -105,10 +105,13 @@ TBitField& TBitField::operator=(const TBitField& bf)
 
 int TBitField::operator==(const TBitField &bf) const // сравнение
 {
-    if (BitLen != bf.BitLen) return false;
-    else {
+    if (BitLen != bf.BitLen) {
+        return false;
+    } else {
         for (int i = 0; i < MemLen; i++) {
-            if (pMem[i] != bf.pMem[i]) return 0;
+            if (pMem[i] != bf.pMem[i]) {
+                return 0;
+            }
         }
     }
     return 1;
@@ -121,23 +124,25 @@ int TBitField::operator!=(const TBitField &bf) const // сравнение
 
 TBitField TBitField::operator|(const TBitField &bf) // операция "или"
 {
-    const int maxBitLen = BitLen > bf.BitLen ? BitLen : bf.BitLen;
-    TBitField tmp(maxBitLen);
-    for (int i = 0; i < tmp.MemLen; ++i) {
-        const TELEM left = i < MemLen ? pMem[i] : 0;
-        const TELEM right = i < bf.MemLen ? bf.pMem[i] : 0;
-        tmp.pMem[i] = left | right;
+    int mx_bitlen = max(this->BitLen, bf.BitLen);
+    TBitField tmp(mx_bitlen);
+    for (int i = 0;i < mx_bitlen;i++) {
+        if (i < min(this->BitLen, bf.BitLen)) {
+            tmp.pMem[i] = this->pMem[i] | bf.pMem[i];
+        } else {
+            tmp.pMem[i] = ((BitLen > bf.BitLen) ? this->pMem[i] : bf.pMem[i]);
+        }
     }
     return tmp;
 }
 
 TBitField TBitField::operator&(const TBitField &bf) // операция "и"
 {
-    const int maxBitLen = BitLen > bf.BitLen ? BitLen : bf.BitLen;
-    TBitField tmp(maxBitLen);
-    const int commonWords = MemLen < bf.MemLen ? MemLen : bf.MemLen;
-    for (int i = 0; i < commonWords; ++i) {
-        tmp.pMem[i] = pMem[i] & bf.pMem[i];
+    int mx_bitlen = max(this->BitLen, bf.BitLen);
+    TBitField tmp(mx_bitlen);
+    for (int i = 0;i < mx_bitlen;i++) {
+        if (i < min(this->BitLen, bf.BitLen)) tmp.pMem[i] = this->pMem[i] & bf.pMem[i];
+        else tmp.pMem[i] = ((BitLen > bf.BitLen) ? this->pMem[i] : bf.pMem[i]);
     }
     return tmp;
 }
